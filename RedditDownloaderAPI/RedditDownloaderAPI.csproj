@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Folder Include="AppData\Audio\" />
+    <Folder Include="AppData\_backups\" />
     <Folder Include="AppData\Outputs\" />
     <Folder Include="AppData\Videos\" />
   </ItemGroup>

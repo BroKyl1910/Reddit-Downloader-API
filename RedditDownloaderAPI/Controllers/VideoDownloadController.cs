@@ -44,16 +44,21 @@ namespace RedditDownloaderAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Download()
         {
+            const string AUDIO_DIRECTORY = "AppData/Audio";
+            const string VIDEO_DIRECTORY = "AppData/Videos";
+            const string OUTPUT_DIRECTORY = "AppData/Outputs";
+            const string BACKUP_DIRECTORY = "AppData/_backups";
+
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             HttpRequest req = HttpContext.Request;
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            string url = data?.url;
+            string baseUrl = data?.baseUrl;
             int quality = data?.quality ?? -1;
 
-            if (url == null)
+            if (baseUrl == null)
             {
                 return new BadRequestObjectResult("Please pass a url in the request body");
 
@@ -65,23 +70,57 @@ namespace RedditDownloaderAPI.Controllers
 
             }
 
-            string html = await GetHtmlFromUrl(url);
-            string videoBaseUrl = await GetVideoBaseUrl(html);
-            string videoUrl = videoBaseUrl + "/DASH_" + quality + ".mp4";
-            string audioUrl = videoBaseUrl + "/DASH_audio.mp4";
+            string videoUrl = baseUrl + "/DASH_" + quality + ".mp4";
+            string audioUrl = baseUrl + "/DASH_audio.mp4";
+
+            bool hasAudio = await UrlExists(new CustomWebClient() { Method = "HEAD" }, new Uri(audioUrl));
 
             long fileTime = DateTime.Now.ToFileTime();
-            string videoFileName = "AppData/Videos/video - " + fileTime + ".mp4";
-            string audioFileName = "AppData/Audio/audio - " + fileTime + ".mp4";
+            string videoFileName = VIDEO_DIRECTORY + "/video - " + fileTime + ".mp4";
+            string audioFileName = AUDIO_DIRECTORY + "/audio - " + fileTime + ".mp4";
+            string outputFileName = OUTPUT_DIRECTORY + "/output - " + fileTime + ".mp4";
+            string backupFileName = BACKUP_DIRECTORY + "/backup - " + fileTime + ".mp4";
 
-            await downloadFile(videoUrl, videoFileName);
-            await downloadFile(audioUrl, audioFileName);
+            if (hasAudio)
+            {
+                await downloadFile(videoUrl, videoFileName);
+                await downloadFile(audioUrl, audioFileName);
 
-            string outputFileName = "AppData/Outputs/output - " + fileTime + ".mp4";
 
-            combineVideoAudio(videoFileName, audioFileName, outputFileName);
+                combineVideoAudio(videoFileName, audioFileName, outputFileName);
+            }
+            else
+            {
+                await downloadFile(videoUrl, outputFileName);
+            }
 
-            return (ActionResult)new OkObjectResult($"Html: {html}");
+            BackupOutput(outputFileName, backupFileName);
+
+            ClearDirectories(new List<string> {
+                    VIDEO_DIRECTORY,
+                    AUDIO_DIRECTORY,
+                    OUTPUT_DIRECTORY
+                });
+            return (ActionResult)new OkObjectResult("Ok");
+        }
+
+        private void BackupOutput(string outputFileName, string backupFileName)
+        {
+            System.IO.File.Copy(outputFileName, backupFileName, true);
+        }
+
+        private void ClearDirectories(List<string> directories)
+        {
+            foreach (string dir in directories)
+            {
+                System.IO.DirectoryInfo di = new DirectoryInfo(dir);
+
+                foreach (FileInfo file in di.GetFiles())
+                {
+                    file.Delete();
+                }
+
+            }
         }
 
         private async Task<VideoViewModel> ParseVideoInformation(string html)
@@ -122,7 +161,7 @@ namespace RedditDownloaderAPI.Controllers
             string query = "\"thumbnail\":{\"url\":";
 
             // searching for content after query, plus 1 because json "
-            int startIndex = html.IndexOf(query)+query.Length + 1;
+            int startIndex = html.IndexOf(query) + query.Length + 1;
 
             int endIndex = html.IndexOf("\"", startIndex);
 
