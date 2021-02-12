@@ -27,3 +27,4 @@ D:\Programs\C#\RedditDownloaderAPI\RedditDownloaderAPI\bin\Debug\netcoreapp3.1\r
 D:\Programs\C#\RedditDownloaderAPI\RedditDownloaderAPI\bin\Debug\netcoreapp3.1\runtimes\unix\lib\netcoreapp3.0\System.Drawing.Common.dll
 D:\Programs\C#\RedditDownloaderAPI\RedditDownloaderAPI\bin\Debug\netcoreapp3.1\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll
 D:\Programs\C#\RedditDownloaderAPI\RedditDownloaderAPI\obj\Debug\netcoreapp3.1\RedditDownloaderAPI.MvcApplicationPartsAssemblyInfo.cache
+D:\Programs\C#\RedditDownloaderAPI\RedditDownloaderAPI\bin\Debug\netcoreapp3.1\web.config

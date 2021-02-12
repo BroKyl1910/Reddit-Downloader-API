@@ -15,39 +15,44 @@ using Newtonsoft.Json;
 namespace RedditDownloaderAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class DownloadController : ControllerBase
+    [Route("api/[controller]/[action]")]
+    public class VideoDownloadController : ControllerBase
     {
-        private readonly ILogger<DownloadController> _logger;
+        private readonly ILogger<VideoDownloadController> _logger;
 
-        public DownloadController(ILogger<DownloadController> logger)
+        public VideoDownloadController(ILogger<VideoDownloadController> logger)
         {
             _logger = logger;
         }
 
+
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> DownloadVideo()
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             HttpRequest req = HttpContext.Request;
 
-            string url = req.Query["url"];
-
-
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            url = url ?? data?.url;
+            string url =data?.url;
+            int quality = data?.quality ?? -1;
 
             if (url == null)
             {
-                return new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+                return new BadRequestObjectResult("Please pass a url in the request body");
+
+            }
+
+            if (quality == -1)
+            {
+                return new BadRequestObjectResult("Please pass a quality in the request body");
 
             }
 
             string html = await GetHtmlFromUrl(url);
             string videoBaseUrl = await GetVideoBaseUrl(html);
-            string videoUrl = videoBaseUrl + "/DASH_720.mp4";
+            string videoUrl = videoBaseUrl + "/DASH_"+quality+".mp4";
             string audioUrl = videoBaseUrl + "/DASH_audio.mp4";
 
             long fileTime = DateTime.Now.ToFileTime();
