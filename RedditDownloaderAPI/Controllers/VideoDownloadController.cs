@@ -96,12 +96,17 @@ namespace RedditDownloaderAPI.Controllers
 
             BackupOutput(outputFileName, backupFileName);
 
+            byte[] fileBytes = System.IO.File.ReadAllBytes(outputFileName);
+
             ClearDirectories(new List<string> {
                     VIDEO_DIRECTORY,
                     AUDIO_DIRECTORY,
                     OUTPUT_DIRECTORY
                 });
-            return (ActionResult)new OkObjectResult("Ok");
+
+            //System.IO.File.WriteAllBytes(BACKUP_DIRECTORY + "/bytes backup - " + fileTime + ".mp4", fileBytes);
+
+            return (ActionResult)new OkObjectResult(fileBytes);
         }
 
         private void BackupOutput(string outputFileName, string backupFileName)
