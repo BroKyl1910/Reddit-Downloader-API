@@ -21,6 +21,11 @@ namespace RedditDownloaderAPI.Controllers
     {
         private readonly ILogger<VideoDownloadController> _logger;
 
+        private const string AUDIO_DIRECTORY = "AppData/Audio";
+        private const string VIDEO_DIRECTORY = "AppData/Videos";
+        private const string OUTPUT_DIRECTORY = "AppData/Outputs";
+        private const string BACKUP_DIRECTORY = "AppData/_backups";
+
         public VideoDownloadController(ILogger<VideoDownloadController> logger)
         {
             _logger = logger;
@@ -44,11 +49,6 @@ namespace RedditDownloaderAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> Download()
         {
-            const string AUDIO_DIRECTORY = "AppData/Audio";
-            const string VIDEO_DIRECTORY = "AppData/Videos";
-            const string OUTPUT_DIRECTORY = "AppData/Outputs";
-            const string BACKUP_DIRECTORY = "AppData/_backups";
-
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             HttpRequest req = HttpContext.Request;
@@ -76,10 +76,10 @@ namespace RedditDownloaderAPI.Controllers
             bool hasAudio = await UrlExists(new CustomWebClient() { Method = "HEAD" }, new Uri(audioUrl));
 
             long fileTime = DateTime.Now.ToFileTime();
-            string videoFileName = VIDEO_DIRECTORY + "/video - " + fileTime + ".mp4";
-            string audioFileName = AUDIO_DIRECTORY + "/audio - " + fileTime + ".mp4";
-            string outputFileName = OUTPUT_DIRECTORY + "/output - " + fileTime + ".mp4";
-            string backupFileName = BACKUP_DIRECTORY + "/backup - " + fileTime + ".mp4";
+            string videoFileName = VIDEO_DIRECTORY + "/video_" + fileTime + ".mp4";
+            string audioFileName = AUDIO_DIRECTORY + "/audio_" + fileTime + ".mp4";
+            string outputFileName = OUTPUT_DIRECTORY + "/output_" + fileTime + ".mp4";
+            string backupFileName = BACKUP_DIRECTORY + "/backup_" + fileTime + ".mp4";
 
             if (hasAudio)
             {
@@ -95,16 +95,13 @@ namespace RedditDownloaderAPI.Controllers
             }
 
             BackupOutput(outputFileName, backupFileName);
-
-            byte[] fileBytes = System.IO.File.ReadAllBytes(outputFileName);
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(outputFileName);
 
             ClearDirectories(new List<string> {
                     VIDEO_DIRECTORY,
                     AUDIO_DIRECTORY,
                     OUTPUT_DIRECTORY
                 });
-
-            //System.IO.File.WriteAllBytes(BACKUP_DIRECTORY + "/bytes backup - " + fileTime + ".mp4", fileBytes);
 
             return (ActionResult)new OkObjectResult(fileBytes);
         }
@@ -130,7 +127,7 @@ namespace RedditDownloaderAPI.Controllers
 
         private async Task<VideoViewModel> ParseVideoInformation(string html)
         {
-            VideoViewModel videoViewModel = new VideoViewModel();
+            VideoViewModel videoViewModel = new VideoViewModel() { MediaType = MediaType.VIDEO };
             var config = Configuration.Default;
 
             //Create a new context for evaluating webpages with the given config
@@ -152,8 +149,8 @@ namespace RedditDownloaderAPI.Controllers
 
             string thumbnailUrl = GetThumbnailUrl(html);
 
-            videoViewModel.VideoId = videoId;
-            videoViewModel.VideoTitle = title;
+            videoViewModel.Id = videoId;
+            videoViewModel.Title = title;
             videoViewModel.BaseDownloadUrl = videoBaseUrl;
             videoViewModel.AvailableResolutions = availableResolutions;
             videoViewModel.ThumbnailUrl = thumbnailUrl;
