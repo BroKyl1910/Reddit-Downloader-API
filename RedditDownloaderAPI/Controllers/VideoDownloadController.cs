@@ -32,14 +32,8 @@ namespace RedditDownloaderAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<VideoViewModel> Information()
+        public async Task<VideoViewModel> Information(string url)
         {
-            HttpRequest req = HttpContext.Request;
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            string url = data?.url;
-
             string html = await GetHtmlFromUrl(url);
             VideoViewModel videoViewModel = await ParseVideoInformation(html);
 
@@ -47,17 +41,8 @@ namespace RedditDownloaderAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Download()
+        public async Task<IActionResult> Download(string baseUrl, int quality=-1)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
-
-            HttpRequest req = HttpContext.Request;
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            string baseUrl = data?.baseUrl;
-            int quality = data?.quality ?? -1;
-
             if (baseUrl == null)
             {
                 return new BadRequestObjectResult("Please pass a url in the request body");
@@ -102,6 +87,13 @@ namespace RedditDownloaderAPI.Controllers
                     AUDIO_DIRECTORY,
                     OUTPUT_DIRECTORY
                 });
+
+            VideoDownloadViewModel videoDownloadViewModel = new VideoDownloadViewModel()
+            {
+                FileBytes = fileBytes,
+                Size = fileBytes.Length,
+                Title = outputFileName
+            };
 
             return (ActionResult)new OkObjectResult(fileBytes);
         }
