@@ -32,7 +32,7 @@ namespace RedditDownloaderAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<VideoViewModel> VideoInformation()
+        public async Task<VideoViewModel> Information()
         {
             HttpRequest req = HttpContext.Request;
 
